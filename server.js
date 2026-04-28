@@ -65,7 +65,7 @@ app.get('/api/summary', async (req, res) => {
         gameCounter[id].users.push(member);
       });
       newWishlists[member.id] = formatted;
-      await sleep(500); 
+      await sleep(2000); 
     }
 
     const commonIds = Object.keys(gameCounter).filter(id => gameCounter[id].count >= 1);
