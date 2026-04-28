@@ -119,6 +119,18 @@
   .updated { text-align: center; font-size: 0.75rem; color: var(--muted); margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
   .tag-free { color: var(--accent2); font-weight: 600; }
   .no-deals { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.9rem; }
+  .game-img {
+    width: 120px;
+    height: 60px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+}
+.game-info-wrapper {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
 </style>
 </head>
 <body>
@@ -205,7 +217,7 @@ async function main() {
     
     // Cerca questa parte nell'index.html
     if (summary.discounted && summary.discounted.length > 0) {
-        summary.discounted.forEach(game => {
+        /* summary.discounted.forEach(game => {
             const ownerHtml = game.members.map(m => `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`).join('');
             html += `
               <a class="game-card highlight" href="https://store.steampowered.com/app/${game.id}" target="_blank">
@@ -226,7 +238,32 @@ async function main() {
                 </div>
               </a>
             `;
-        });
+        }); */
+        summary.discounted.forEach(game => {
+          const ownerHtml = game.members.map(m => `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`).join('');
+          html += `
+            <a class="game-card highlight" href="https://store.steampowered.com/app/${game.id}" target="_blank">
+              <div class="game-info-wrapper">
+                <img src="${game.image}" class="game-img" onerror="this.src='https://via.placeholder.com/120x60?text=No+Img'">
+                <div>
+                  <div class="game-header">
+                    <span class="game-name">${game.name}</span>
+                    <span class="want-badge">${game.members.length} lo vogliono</span>
+                  </div>
+                  <div class="game-meta">
+                      <div class="owners">${ownerHtml}</div>
+                      <span>${game.members.map(m => m.name).join(', ')}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="price-block">
+                <div class="discount-badge">-${game.discount_percent}%</div>
+                <div class="price-final">${formatPrice(game.final_price)}</div>
+                <div class="price-original">${formatPrice(game.original_price)}</div>
+              </div>
+            </a>
+          `;
+      });
     } else {
       html += `<div class="no-deals">Nessun gioco in comune è attualmente in offerta</div>`;
     }

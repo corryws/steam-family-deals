@@ -90,13 +90,22 @@ app.get('/api/summary', async (req, res) => {
               
               console.log(`✅ Trovato: ${gameName} (${id})`);
 
-              discounted.push({
+              /* discounted.push({
                 id: id,
                 name: gameName,
                 discount_percent: game.price_overview.discount_percent,
                 final_price: game.price_overview.final_formatted,
                 original_price: game.price_overview.initial_formatted,
                 members: gameCounter[id].users
+              }); */
+              discounted.push({
+                  id: id,
+                  name: gameName,
+                  image: `https://capsule_main.cea.com/steam/apps/${id}/header.jpg`, // AGGIUNGI QUESTA
+                  discount_percent: game.price_overview.discount_percent,
+                  final_price: game.price_overview.final_formatted,
+                  original_price: game.price_overview.initial_formatted,
+                  members: gameCounter[id].users
               });
             }
           }
