@@ -147,17 +147,18 @@ async function main() {
     const membersRes = await fetch('/api/members');
     const MEMBERS = await membersRes.json();
 
-    const [wishlistResults, dealsRes] = await Promise.all([
-      Promise.all(MEMBERS.map(async m => {
+    // Carica wishlist di tutti
+    const wishlistResults = await Promise.all(
+      MEMBERS.map(async m => {
         const r = await fetch(`/api/wishlist/${m.id}`);
         const data = await r.json();
         return { member: m, wishlist: data || {} };
-      })),
-      fetch('/api/deals').then(r => r.json())
-    ]);
+      })
+    );
 
-    const dealsMap = {};
-    (dealsRes?.specials?.items || []).forEach(g => { dealsMap[String(g.id)] = g; });
+    // Chiama il summary per le offerte reali
+    const summaryRes = await fetch('/api/summary');
+    const summary = await summaryRes.json();
 
     const wishlistCounts = {};
     wishlistResults.forEach(({ member, wishlist }) => {
@@ -168,25 +169,13 @@ async function main() {
     });
 
     const sharedGames = Object.entries(wishlistCounts)
-      .filter(([, members]) => members.length >= 2)
-      .sort((a, b) => b[1].length - a[1].length);
-
-    const sharedOnSale = sharedGames
-      .filter(([appId]) => dealsMap[appId])
-      .sort((a, b) => (dealsMap[b[0]]?.discount_percent || 0) - (dealsMap[a[0]]?.discount_percent || 0));
-
-    const allOnSale = Object.entries(dealsMap)
-      .filter(([appId]) => wishlistCounts[appId] && !sharedOnSale.find(([id]) => id === appId))
-      .sort((a, b) => (b[1].discount_percent || 0) - (a[1].discount_percent || 0))
-      .slice(0, 5);
-
-    const totalWishlist = Object.keys(wishlistCounts).length;
+      .filter(([, members]) => members.length >= 2);
 
     let html = `
       <div class="stats-bar">
         <div class="stat"><div class="stat-number">${MEMBERS.length}</div><div class="stat-label">Membri</div></div>
         <div class="stat"><div class="stat-number">${sharedGames.length}</div><div class="stat-label">Desideri in comune</div></div>
-        <div class="stat"><div class="stat-number">${sharedOnSale.length + allOnSale.length}</div><div class="stat-label">In offerta ora</div></div>
+        <div class="stat"><div class="stat-number">${summary.discounted?.length || 0}</div><div class="stat-label">In offerta ora</div></div>
       </div>
       <p class="section-title"><span class="dot"></span> Membri del gruppo</p>
       <div class="members-grid">
@@ -205,23 +194,22 @@ async function main() {
     html += `</div>`;
 
     html += `<p class="section-title"><span class="dot"></span> Offerte sui desideri in comune</p><div class="games-grid">`;
-    if (sharedOnSale.length > 0) {
-      sharedOnSale.slice(0, 10).forEach(([appId, members]) => {
-        const deal = dealsMap[appId];
-        const ownerHtml = members.map(m => `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`).join('');
+    if (summary.discounted?.length > 0) {
+      summary.discounted.forEach(game => {
+        const ownerHtml = game.members.map(m => `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`).join('');
         html += `
-          <a class="game-card highlight" href="https://store.steampowered.com/app/${appId}" target="_blank">
+          <a class="game-card highlight" href="https://store.steampowered.com/app/${game.id}" target="_blank">
             <div>
               <div class="game-header">
-                <span class="game-name">${deal.name}</span>
-                <span class="want-badge">${members.length} lo vogliono</span>
+                <span class="game-name">${game.name}</span>
+                <span class="want-badge">${game.members.length} lo vogliono</span>
               </div>
-              <div class="game-meta"><div class="owners">${ownerHtml}</div><span>${members.map(m => m.name).join(', ')}</span></div>
+              <div class="game-meta"><div class="owners">${ownerHtml}</div><span>${game.members.map(m => m.name).join(', ')}</span></div>
             </div>
             <div class="price-block">
-              <div class="discount-badge">-${deal.discount_percent}%</div>
-              <div class="price-final">${formatPrice(deal.final_price)}</div>
-              <div class="price-original">${formatPrice(deal.original_price)}</div>
+              <div class="discount-badge">-${game.discount_percent}%</div>
+              <div class="price-final">${formatPrice(game.final_price)}</div>
+              <div class="price-original">${formatPrice(game.original_price)}</div>
             </div>
           </a>
         `;
@@ -230,28 +218,6 @@ async function main() {
       html += `<div class="no-deals">Nessun gioco in comune è attualmente in offerta</div>`;
     }
     html += `</div>`;
-
-    if (allOnSale.length > 0) {
-      html += `<p class="section-title"><span class="dot"></span> Altre offerte dalla vostra wishlist</p><div class="games-grid">`;
-      allOnSale.forEach(([appId, deal]) => {
-        const members = wishlistCounts[appId] || [];
-        const ownerHtml = members.map(m => `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`).join('');
-        html += `
-          <a class="game-card" href="https://store.steampowered.com/app/${appId}" target="_blank">
-            <div>
-              <div class="game-header"><span class="game-name">${deal.name}</span></div>
-              <div class="game-meta"><div class="owners">${ownerHtml}</div><span>${members.map(m => m.name).join(', ')}</span></div>
-            </div>
-            <div class="price-block">
-              <div class="discount-badge">-${deal.discount_percent}%</div>
-              <div class="price-final">${formatPrice(deal.final_price)}</div>
-              <div class="price-original">${formatPrice(deal.original_price)}</div>
-            </div>
-          </a>
-        `;
-      });
-      html += `</div>`;
-    }
 
     html += `
       <div class="updated">
