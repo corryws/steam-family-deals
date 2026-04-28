@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmigelsWild</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e12;
+    --surface: #16161d;
+    --surface2: #1e1e28;
+    --border: rgba(255,255,255,0.07);
+    --accent: #4f9eff;
+    --accent2: #00d4aa;
+    --text: #e8e8f0;
+    --muted: #7a7a8c;
+    --red: #ff5c5c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-transform: uppercase;
+  }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.3rem; letter-spacing: 1px; text-transform: uppercase; }
+  .stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; text-align: center; }
+  .stat-number { font-family: 'Rajdhani', sans-serif; font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  .section-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); display: inline-block; }
+  .games-grid { display: grid; gap: 0.75rem; margin-bottom: 2.5rem; }
+  .game-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1rem 1.25rem;
+    display: grid; grid-template-columns: 1fr auto;
+    align-items: center; gap: 1rem;
+    transition: border-color 0.2s, background 0.2s;
+    text-decoration: none; color: inherit; cursor: pointer;
+  }
+  .game-card:hover { border-color: rgba(79,158,255,0.3); background: var(--surface2); }
+  .game-card.highlight { border-color: rgba(0,212,170,0.25); }
+  .game-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+  .game-name { font-weight: 500; font-size: 0.95rem; }
+  .want-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(0,212,170,0.12); color: var(--accent2);
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;
+    font-weight: 500; letter-spacing: 0.5px; white-space: nowrap;
+  }
+  .game-meta { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .owners { display: flex; gap: 4px; }
+  .owner-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 600; color: var(--accent);
+  }
+  .price-block { text-align: right; }
+  .discount-badge { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--accent2); margin-bottom: 2px; }
+  .price-final { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text); }
+  .price-original { font-size: 0.75rem; color: var(--muted); text-decoration: line-through; }
+  .members-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 2.5rem; }
+  .member-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; }
+  .member-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700;
+    color: #fff; margin: 0 auto 8px;
+  }
+  .member-name { font-size: 0.85rem; font-weight: 500; margin-bottom: 2px; }
+  .member-count { font-size: 0.75rem; color: var(--muted); }
+  .loading { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .loading-spinner {
+    width: 40px; height: 40px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg {
+    background: rgba(255,92,92,0.08); border: 1px solid rgba(255,92,92,0.2);
+    border-radius: 12px; padding: 1.5rem; text-align: center; color: var(--red); margin: 2rem 0;
+  }
+  .refresh-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Inter', sans-serif;
+    font-size: 0.85rem; padding: 0.6rem 1.2rem;
+    border-radius: 8px; cursor: pointer; transition: border-color 0.2s; margin-top: 1rem;
+  }
+  .refresh-btn:hover { border-color: var(--accent); }
+  .updated { text-align: center; font-size: 0.75rem; color: var(--muted); margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .tag-free { color: var(--accent2); font-weight: 600; }
+  .no-deals { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>SmigelsWild</h1>
+    <p class="subtitle">Offerte sui giochi che volete in comune</p>
+  </header>
+  <div id="app">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <p>Caricamento wishlist del gruppo...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function formatPrice(cents) {
+  if (cents === 0) return '<span class="tag-free">GRATIS</span>';
+  return (cents / 100).toFixed(2).replace('.', ',') + ' €';
+}
+
+async function main() {
+  const appDiv = document.getElementById('app');
+  try {
+    const membersRes = await fetch('/api/members');
+    const MEMBERS = await membersRes.json();
+
+    const [wishlistResults, dealsRes] = await Promise.all([
+      Promise.all(MEMBERS.map(async m => {
+        const r = await fetch(`/api/wishlist/${m.id}`);
+        const data = await r.json();
+        return { member: m, wishlist: data || {} };
+      })),
+      fetch('/api/deals').then(r => r.json())
+    ]);
+
+    const dealsMap = {};
+    (dealsRes?.specials?.items || []).forEach(g => { dealsMap[String(g.id)] = g; });
+
+    const wishlistCounts = {};
+    wishlistResults.forEach(({ member, wishlist }) => {
+      Object.keys(wishlist).forEach(appId => {
+        if (!wishlistCounts[appId]) wishlistCounts[appId] = [];
+        wishlistCounts[appId].push(member);
+      });
+    });
+
+    const sharedGames = Object.entries(wishlistCounts)
+      .filter(([, members]) => members.length >= 2)
+      .sort((a, b) => b[1].length - a[1].length);
+
+    const sharedOnSale = sharedGames
+      .filter(([appId]) => dealsMap[appId])
+      .sort((a, b) => (dealsMap[b[0]]?.discount_percent || 0) - (dealsMap[a[0]]?.discount_percent || 0));
+
+    const allOnSale = Object.entries(dealsMap)
+      .filter(([appId]) => wishlistCounts[appId] && !sharedOnSale.find(([id]) => id === appId))
+      .sort((a, b) => (b[1].discount_percent || 0) - (a[1].discount_percent || 0))
+      .slice(0, 5);
+
+    const totalWishlist = Object.keys(wishlistCounts).length;
+
+    let html = `
+      <div class="stats-bar">
+        <div class="stat"><div class="stat-number">${MEMBERS.length}</div><div class="stat-label">Membri</div></div>
+        <div class="stat"><div class="stat-number">${sharedGames.length}</div><div class="stat-label">Desideri in comune</div></div>
+        <div class="stat"><div class="stat-number">${sharedOnSale.length + allOnSale.length}</div><div class="stat-label">In offerta ora</div></div>
+      </div>
+      <p class="section-title"><span class="dot"></span> Membri del gruppo</p>
+      <div class="members-grid">
+    `;
+
+    wishlistResults.forEach(({ member, wishlist }) => {
+      html += `
+        <div class="member-card">
+          <div class="member-avatar">${member.initials}</div>
+          <div class="member-name">${member.name}</div>
+          <div class="member-count">${Object.keys(wishlist).length} giochi in wishlist</div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+
+    html += `<p class="section-title"><span class="dot"></span> Offerte sui desideri in comune</p><div class="games-grid">`;
+    if (sharedOnSale.length > 0) {
+      sharedOnSale.slice(0, 10).forEach(([appId, members]) => {
+        const deal = dealsMap[appId];
+        const ownerHtml = members.map(m => `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`).join('');
+        html += `
+          <a class="game-card highlight" href="https://store.steampowered.com/app/${appId}" target="_blank">
+            <div>
+              <div class="game-header">
+                <span class="game-name">${deal.name}</span>
+                <span class="want-badge">${members.length} lo vogliono</span>
+              </div>
+              <div class="game-meta"><div class="owners">${ownerHtml}</div><span>${members.map(m => m.name).join(', ')}</span></div>
+            </div>
+            <div class="price-block">
+              <div class="discount-badge">-${deal.discount_percent}%</div>
+              <div class="price-final">${formatPrice(deal.final_price)}</div>
+              <div class="price-original">${formatPrice(deal.original_price)}</div>
+            </div>
+          </a>
+        `;
+      });
+    } else {
+      html += `<div class="no-deals">Nessun gioco in comune è attualmente in offerta</div>`;
+    }
+    html += `</div>`;
+
+    if (allOnSale.length > 0) {
+      html += `<p class="section-title"><span class="dot"></span> Altre offerte dalla vostra wishlist</p><div class="games-grid">`;
+      allOnSale.forEach(([appId, deal]) => {
+        const members = wishlistCounts[appId] || [];
+        const ownerHtml = members.map(m => `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`).join('');
+        html += `
+          <a class="game-card" href="https://store.steampowered.com/app/${appId}" target="_blank">
+            <div>
+              <div class="game-header"><span class="game-name">${deal.name}</span></div>
+              <div class="game-meta"><div class="owners">${ownerHtml}</div><span>${members.map(m => m.name).join(', ')}</span></div>
+            </div>
+            <div class="price-block">
+              <div class="discount-badge">-${deal.discount_percent}%</div>
+              <div class="price-final">${formatPrice(deal.final_price)}</div>
+              <div class="price-original">${formatPrice(deal.original_price)}</div>
+            </div>
+          </a>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    html += `
+      <div class="updated">
+        Aggiornato il ${new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+        <br><br><button class="refresh-btn" onclick="location.reload()">Aggiorna</button>
+      </div>
+    `;
+
+    appDiv.innerHTML = html;
+  } catch (err) {
+    appDiv.innerHTML = `
+      <div class="error-msg">
+        <p>Errore nel caricamento dei dati.</p>
+        <p style="font-size:0.8rem;margin-top:0.5rem;opacity:0.7">${err.message}</p>
+        <button class="refresh-btn" onclick="location.reload()">Riprova</button>
+      </div>
+    `;
+  }
+}
+
+main();
+</script>
+</body>
+</html>
