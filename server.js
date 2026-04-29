@@ -13,7 +13,7 @@ const MEMBERS = [
   { id: '76561198044574276', name: 'Boris', initials: 'BO' },
   { id: '76561198155403000', name: 'ErCipolla', initials: 'RI' },
   { id: '76561198093585873', name: 'ManushBlades', initials: 'MA' },
-  { id: '76561198046999682', name: 'WaCagher', initials: 'WA' },
+  { id: '76561198093194853', name: 'WaCagher', initials: 'WA' },
   { id: '76561198089183727', name: 'Ture', initials: 'TI' }, 
 ];
 
