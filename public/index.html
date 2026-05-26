@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>SmigelsWild</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -15,17 +15,32 @@
     --accent2: #00d4aa;
     --text: #e8e8f0;
     --muted: #7a7a8c;
-    --red: #ff5c5c;
-    --yellow: #f5c542;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; padding: 2rem 1rem; }
-  .container { max-width: 960px; margin: 0 auto; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; overscroll-behavior-y: contain; }
+
+  /* PULL TO REFRESH */
+  #ptr-indicator {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+    padding: 12px; font-size: 0.82rem; color: var(--muted);
+    transform: translateY(-100%); transition: transform 0.25s ease;
+    pointer-events: none;
+  }
+  #ptr-indicator.visible { transform: translateY(0); }
+  #ptr-indicator.releasing { color: var(--accent2); }
+  .ptr-arrow { font-size: 1.2rem; transition: transform 0.25s; }
+  #ptr-indicator.releasing .ptr-arrow { transform: rotate(180deg); }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
 
   /* HEADER */
   header { text-align: center; margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
   h1 { font-family: 'Rajdhani', sans-serif; font-size: 2.8rem; font-weight: 700; letter-spacing: 2px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-transform: uppercase; }
   .subtitle { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; letter-spacing: 1px; text-transform: uppercase; }
+  .updated-text { color: var(--muted); font-size: 0.75rem; margin-top: 0.5rem; min-height: 18px; }
 
   /* STATS */
   .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.75rem; }
@@ -33,53 +48,48 @@
   .stat-number { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--accent); }
   .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
 
-  /* MEMBERS ROW */
+  /* SCAN STATUS BAR */
+  .scan-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+  .scan-bar.hidden { display: none; }
+  .scan-info { flex: 1; }
+  .scan-message { font-size: 0.82rem; color: var(--text); margin-bottom: 6px; }
+  .scan-track { height: 3px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .scan-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width 0.5s ease; width: 0%; }
+  .scan-pct { font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; color: var(--muted); white-space: nowrap; }
+  .scan-spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MEMBERS */
   .members-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-  .member-chip {
-    display: flex; align-items: center; gap: 7px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 999px; padding: 5px 14px 5px 6px;
-    cursor: pointer; transition: border-color 0.2s, background 0.2s;
-    font-size: 0.82rem; user-select: none;
-  }
+  .member-chip { display: flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 5px 14px 5px 6px; cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 0.82rem; user-select: none; }
   .member-chip:hover { border-color: rgba(79,158,255,0.4); }
   .member-chip.active { border-color: var(--accent); background: rgba(79,158,255,0.1); color: var(--accent); }
   .member-chip.active .chip-dot { background: var(--accent); }
   .chip-dot { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-family: 'Rajdhani', sans-serif; font-size: 0.7rem; font-weight: 700; color: #fff; flex-shrink: 0; }
 
-  /* FILTERS BAR */
+  /* FILTERS */
   .filters-bar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
   .filter-group { display: flex; gap: 0.4rem; }
   .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.78rem; padding: 5px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .filter-btn:hover { border-color: var(--accent); color: var(--text); }
   .filter-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(0,212,170,0.08); }
-  .search-input {
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem;
-    padding: 5px 12px; border-radius: 8px; outline: none;
-    transition: border-color 0.2s; width: 200px;
-  }
+  .search-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem; padding: 5px 12px; border-radius: 8px; outline: none; transition: border-color 0.2s; width: 200px; }
   .search-input:focus { border-color: var(--accent); }
   .search-input::placeholder { color: var(--muted); }
   .results-count { margin-left: auto; font-size: 0.75rem; color: var(--muted); }
 
-  /* SECTION TITLE */
+  /* SECTION */
   .section-title { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
   .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); display: inline-block; }
 
   /* GAME CARDS */
   .games-grid { display: grid; gap: 0.6rem; }
-  .game-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 0.85rem 1rem;
-    display: grid; grid-template-columns: 110px 1fr auto;
-    align-items: center; gap: 1rem;
-    text-decoration: none; color: inherit;
-    transition: border-color 0.2s, background 0.2s;
-  }
+  .game-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.85rem 1rem; display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 1rem; text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s; }
   .game-card:hover { border-color: rgba(79,158,255,0.35); background: var(--surface2); }
   .game-card.multi { border-color: rgba(0,212,170,0.2); }
+  .game-card.full-price { opacity: 0.55; }
+  .game-card.full-price:hover { opacity: 1; }
   .game-img { width: 110px; height: 52px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: var(--surface2); flex-shrink: 0; }
   .game-info { min-width: 0; }
   .game-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
@@ -90,53 +100,82 @@
   .price-block { text-align: right; flex-shrink: 0; }
   .discount-badge { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; color: var(--accent2); }
   .price-final { font-family: 'Rajdhani', sans-serif; font-size: 1.25rem; font-weight: 700; }
+  .price-final.dimmed { font-size: 1rem; color: var(--muted); }
   .price-original { font-size: 0.72rem; color: var(--muted); text-decoration: line-through; }
-
-  /* PROGRESS */
-  .progress-bar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
-  .progress-label { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.75rem; display: flex; justify-content: space-between; }
-  .progress-track { height: 4px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width 0.4s ease; width: 0%; }
-  .status-msg { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; min-height: 18px; }
-
-  /* MISC */
-  .no-results { text-align: center; padding: 3rem 2rem; color: var(--muted); font-size: 0.9rem; }
-  .updated { text-align: center; font-size: 0.75rem; color: var(--muted); margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
-  .refresh-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.82rem; padding: 0.5rem 1.1rem; border-radius: 8px; cursor: pointer; transition: border-color 0.2s; margin-top: 0.75rem; }
-  .refresh-btn:hover { border-color: var(--accent); }
-  .hidden { display: none !important; }
-  .fade-in { animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  .loading-spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
-  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* PAGINATION */
   .pagination { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.25rem; flex-wrap: wrap; }
-  .page-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: Inter, sans-serif; font-size: 0.82rem; padding: 5px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-width: 36px; }
+  .page-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.82rem; padding: 5px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-width: 36px; }
   .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
   .page-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79,158,255,0.1); font-weight: 600; }
   .page-btn:disabled { opacity: 0.3; cursor: default; }
   .page-info { font-size: 0.78rem; color: var(--muted); padding: 0 0.5rem; }
-  .per-page-select { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: Inter, sans-serif; font-size: 0.78rem; padding: 4px 8px; border-radius: 8px; cursor: pointer; outline: none; margin-left: 1rem; }
-  .per-page-select:focus { border-color: var(--accent); }
+  .per-page-select { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.78rem; padding: 4px 8px; border-radius: 8px; cursor: pointer; outline: none; margin-left: 1rem; }
+
+  /* TOGGLE FULL */
+  .toggle-section { display: flex; align-items: center; gap: 1rem; margin-top: 2rem; }
+  .toggle-full-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.82rem; padding: 6px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .toggle-full-btn:hover { border-color: var(--accent); color: var(--text); }
+  .toggle-full-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(0,212,170,0.08); }
+
+  /* REFRESH BTN */
+  .refresh-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.82rem; padding: 6px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .refresh-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+  .refresh-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* MISC */
+  .no-results { text-align: center; padding: 3rem 2rem; color: var(--muted); font-size: 0.9rem; }
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-state p { margin-bottom: 1rem; }
+  .hidden { display: none !important; }
+  .fade-in { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 600px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .game-card { grid-template-columns: 80px 1fr auto; gap: 0.6rem; padding: 0.7rem; }
+    .game-img { width: 80px; height: 38px; }
+    .game-name { font-size: 0.82rem; max-width: 180px; }
+    .search-input { width: 100%; }
+    .filters-bar { gap: 0.5rem; }
+    .results-count { margin-left: 0; width: 100%; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
+
+<!-- PULL TO REFRESH INDICATOR -->
+<div id="ptr-indicator">
+  <span class="ptr-arrow">↓</span>
+  <span id="ptr-text">Trascina per aggiornare</span>
+</div>
+
+<div class="container" id="main">
   <header>
     <h1>SmigelsWild</h1>
     <p class="subtitle">Offerte sulle wishlist del gruppo</p>
+    <p class="updated-text" id="updated-text"></p>
   </header>
 
   <!-- STATS -->
   <div class="stats-bar">
     <div class="stat"><div class="stat-number" id="stat-members">6</div><div class="stat-label">Membri</div></div>
     <div class="stat"><div class="stat-number" id="stat-total">—</div><div class="stat-label">Giochi totali</div></div>
-    <div class="stat"><div class="stat-number" id="stat-deals">0</div><div class="stat-label">In offerta</div></div>
-    <div class="stat"><div class="stat-number" id="stat-checked">—</div><div class="stat-label">Controllati</div></div>
+    <div class="stat"><div class="stat-number" id="stat-deals">—</div><div class="stat-label">In offerta</div></div>
+    <div class="stat"><div class="stat-number" id="stat-full">—</div><div class="stat-label">Prezzo pieno</div></div>
   </div>
 
-  <!-- MEMBRI -->
+  <!-- SCAN STATUS -->
+  <div class="scan-bar hidden" id="scan-bar">
+    <div class="scan-spinner" id="scan-spinner"></div>
+    <div class="scan-info">
+      <div class="scan-message" id="scan-message">Avvio...</div>
+      <div class="scan-track"><div class="scan-fill" id="scan-fill"></div></div>
+    </div>
+    <div class="scan-pct" id="scan-pct">0%</div>
+  </div>
+
+  <!-- MEMBERS -->
   <p class="section-title"><span class="dot"></span> Filtra per membro</p>
   <div class="members-row" id="members-row"></div>
 
@@ -157,52 +196,60 @@
     <span class="results-count" id="results-count"></span>
   </div>
 
-  <!-- PROGRESS -->
-  <div class="progress-bar-wrap" id="progress-wrap">
-    <div class="progress-label">
-      <span id="progress-text">Avvio...</span>
-      <span id="progress-pct">0%</span>
-    </div>
-    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-    <div class="status-msg" id="status-msg"></div>
-  </div>
-
-  <!-- GAMES -->
+  <!-- DEALS -->
   <p class="section-title"><span class="dot"></span> Offerte trovate</p>
   <div class="games-grid" id="games-grid"></div>
   <div class="no-results hidden" id="no-results">Nessun gioco corrisponde ai filtri</div>
+  <div class="empty-state hidden" id="empty-state">
+    <p>Nessun dato disponibile.</p>
+    <button class="refresh-btn" id="start-scan-btn">Avvia prima scansione</button>
+  </div>
   <div class="pagination hidden" id="pagination"></div>
 
-  <div class="updated hidden" id="updated-bar">
-    <span id="updated-text"></span><br><br>
-    <button class="refresh-btn" id="refresh-btn">Aggiorna ora</button>
+  <!-- FULL PRICE SECTION -->
+  <div class="toggle-section">
+    <p class="section-title" style="margin:0;flex:1"><span class="dot"></span> Resto della wishlist</p>
+    <button class="toggle-full-btn hidden" id="toggle-full-btn">▶ Mostra tutti</button>
+    <button class="refresh-btn" id="refresh-btn" style="margin-left:auto">Aggiorna ora</button>
   </div>
+
+  <div id="full-section" class="hidden" style="margin-top:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+      <span class="results-count" id="full-count"></span>
+    </div>
+    <div class="games-grid" id="full-grid"></div>
+    <div class="no-results hidden" id="full-no-results">Nessun gioco corrisponde ai filtri</div>
+    <div class="pagination hidden" id="full-pagination"></div>
+  </div>
+
+  <div style="height:2rem"></div>
 </div>
 
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
 const state = {
-  allGames: [],
+  deals: [],
+  fullGames: [],
   members: [],
   counts: {},
   activeMembers: new Set(),
   sortBy: 'discount',
   minDiscount: 0,
   search: '',
-  totalIds: 0,
-  checkedIds: 0,
   page: 1,
+  fullPage: 1,
   perPage: 25,
+  showFull: false,
+  scanning: false,
+  pollTimer: null,
 };
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
-function parsePrice(str) {
-  if (!str) return Infinity;
-  return parseFloat(str.replace(/[^\d,]/g, '').replace(',', '.')) || Infinity;
-}
+const $ = id => document.getElementById(id);
+const parsePrice = str => str ? parseFloat(str.replace(/[^\d,]/g,'').replace(',','.')) || Infinity : Infinity;
 
 function sorted(games) {
-  return [...games].sort((a, b) => {
+  return [...games].sort((a,b) => {
     if (state.sortBy === 'discount') return b.discount_percent - a.discount_percent;
     if (state.sortBy === 'price-asc') return parsePrice(a.final_price) - parsePrice(b.final_price);
     if (state.sortBy === 'price-desc') return parsePrice(b.final_price) - parsePrice(a.final_price);
@@ -210,234 +257,303 @@ function sorted(games) {
   });
 }
 
-function filtered() {
-  return sorted(state.allGames.filter(g => {
+function filtered(games) {
+  const q = state.search.toLowerCase();
+  return games.filter(g => {
     if (g.discount_percent < state.minDiscount) return false;
     if (state.activeMembers.size > 0) {
-      const ids = g.members.map(m => m.id);
-      if (![...state.activeMembers].some(id => ids.includes(id))) return false;
+      if (![...state.activeMembers].some(id => g.members.some(m => m.id === id))) return false;
     }
-    if (state.search) {
-      if (!g.name.toLowerCase().includes(state.search.toLowerCase())) return false;
-    }
+    if (q && !g.name.toLowerCase().includes(q)) return false;
     return true;
-  }));
+  });
+}
+
+function filteredFull() {
+  const q = state.search.toLowerCase();
+  return state.fullGames.filter(g => {
+    if (state.activeMembers.size > 0) {
+      if (![...state.activeMembers].some(id => g.members.some(m => m.id === id))) return false;
+    }
+    if (q && !g.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
 }
 
 // ── RENDER ─────────────────────────────────────────────────────────────────
-function renderMembers() {
-  const row = document.getElementById('members-row');
-  row.innerHTML = state.members.map(m => `
-    <div class="member-chip ${state.activeMembers.has(m.id) ? 'active' : ''}" data-id="${m.id}">
-      <div class="chip-dot">${m.initials}</div>
-      <span>${m.name}${state.counts[m.name] !== undefined ? ` (${state.counts[m.name]})` : ''}</span>
-    </div>
-  `).join('');
-  row.querySelectorAll('.member-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const id = chip.dataset.id;
-      if (state.activeMembers.has(id)) state.activeMembers.delete(id);
-      else state.activeMembers.add(id);
-      state.page = 1;
-      renderMembers();
-      renderGames();
-    });
-  });
-}
-
-function gameCardHTML(g) {
-  const ownerHtml = g.members.map(m =>
-    `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`
-  ).join('');
+function gameCardHTML(g, full = false) {
+  const owners = g.members.map(m => `<div class="owner-dot" title="${m.name}">${m.initials[0]}</div>`).join('');
   const multi = g.members.length >= 2;
-  return `
-    <a class="game-card ${multi ? 'multi' : ''} fade-in"
-       href="https://store.steampowered.com/app/${g.id}" target="_blank" rel="noopener">
-      <img class="game-img" src="${g.image}" alt="${g.name}"
-           onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22110%22 height=%2252%22><rect width=%22110%22 height=%2252%22 fill=%22%231e1e28%22/><text x=%2255%22 y=%2230%22 text-anchor=%22middle%22 fill=%22%237a7a8c%22 font-size=%2210%22>No image</text></svg>'">
-      <div class="game-info">
-        <div class="game-header">
-          <span class="game-name" title="${g.name}">${g.name}</span>
-          ${multi ? `<span class="want-badge">${g.members.length} lo vogliono</span>` : ''}
-        </div>
-        <div class="owners">${ownerHtml}</div>
+  const price = full
+    ? `<div class="price-block"><div class="price-final dimmed">${g.final_price || (g.is_free ? 'Gratis' : '—')}</div></div>`
+    : `<div class="price-block"><div class="discount-badge">-${g.discount_percent}%</div><div class="price-final">${g.final_price||'—'}</div><div class="price-original">${g.original_price||''}</div></div>`;
+  const placeholder = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='52'><rect width='110' height='52' fill='%231e1e28'/><text x='55' y='30' text-anchor='middle' fill='%237a7a8c' font-size='10'>No image</text></svg>`;
+  return `<a class="game-card ${multi?'multi':''} ${full?'full-price':''} fade-in"
+    href="https://store.steampowered.com/app/${g.id}" target="_blank" rel="noopener">
+    <img class="game-img" src="${g.image}" alt="" onerror="this.src='${placeholder}'">
+    <div class="game-info">
+      <div class="game-header">
+        <span class="game-name" title="${g.name}">${g.name}</span>
+        ${multi?`<span class="want-badge">${g.members.length} lo vogliono</span>`:''}
       </div>
-      <div class="price-block">
-        <div class="discount-badge">-${g.discount_percent}%</div>
-        <div class="price-final">${g.final_price || '—'}</div>
-        <div class="price-original">${g.original_price || ''}</div>
-      </div>
-    </a>
-  `;
+      <div class="owners">${owners}</div>
+    </div>
+    ${price}
+  </a>`;
 }
 
-function renderGames() {
-  const all = filtered();
-  const totalPages = Math.max(1, Math.ceil(all.length / state.perPage));
-  if (state.page > totalPages) state.page = totalPages;
-
-  const start = (state.page - 1) * state.perPage;
-  const page = all.slice(start, start + state.perPage);
-
-  const grid = document.getElementById('games-grid');
-  const noRes = document.getElementById('no-results');
-  const count = document.getElementById('results-count');
-
-  grid.innerHTML = page.map(gameCardHTML).join('');
-  noRes.classList.toggle('hidden', all.length > 0);
-  count.textContent = all.length > 0 ? `${all.length} risultati` : '';
-
-  renderPagination(totalPages, all.length);
-}
-
-function renderPagination(totalPages) {
-  const el = document.getElementById('pagination');
+function renderPagination(elId, currentPage, totalPages, onPageChange) {
+  const el = $(elId);
   if (totalPages <= 1) { el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
 
-  const pages = new Set([1, totalPages, state.page, state.page - 1, state.page + 1].filter(p => p >= 1 && p <= totalPages));
-  const sorted = [...pages].sort((a, b) => a - b);
+  const pages = new Set([1, totalPages, currentPage, currentPage-1, currentPage+1].filter(p=>p>=1&&p<=totalPages));
+  const sorted = [...pages].sort((a,b)=>a-b);
 
-  let html = '<button class="page-btn" id="pg-prev"' + (state.page === 1 ? ' disabled' : '') + '>&#8592;</button>';
+  let html = `<button class="page-btn" data-action="prev" ${currentPage===1?'disabled':''}>&#8592;</button>`;
   let prev = 0;
   for (const p of sorted) {
-    if (p - prev > 1) html += '<span class="page-info">…</span>';
-    html += '<button class="page-btn' + (p === state.page ? ' active' : '') + '" data-page="' + p + '">' + p + '</button>';
+    if (p - prev > 1) html += `<span class="page-info">…</span>`;
+    html += `<button class="page-btn ${p===currentPage?'active':''}" data-page="${p}">${p}</button>`;
     prev = p;
   }
-  html += '<button class="page-btn" id="pg-next"' + (state.page === totalPages ? ' disabled' : '') + '>&#8594;</button>';
-  html += '<select class="per-page-select" id="per-page-sel">'
-    + '<option value="10"' + (state.perPage===10?' selected':'') + '>10 / pag</option>'
-    + '<option value="25"' + (state.perPage===25?' selected':'') + '>25 / pag</option>'
-    + '<option value="50"' + (state.perPage===50?' selected':'') + '>50 / pag</option>'
-    + '<option value="100"' + (state.perPage===100?' selected':'') + '>100 / pag</option>'
-    + '</select>';
+  html += `<button class="page-btn" data-action="next" ${currentPage===totalPages?'disabled':''}>&#8594;</button>`;
+  html += `<select class="per-page-select" id="${elId}-perpage">
+    ${[10,25,50,100].map(n=>`<option value="${n}" ${state.perPage===n?'selected':''}>${n} / pag</option>`).join('')}
+  </select>`;
 
   el.innerHTML = html;
-
-  el.querySelector('#pg-prev').addEventListener('click', () => { state.page--; renderGames(); });
-  el.querySelector('#pg-next').addEventListener('click', () => { state.page++; renderGames(); });
-  el.querySelectorAll('[data-page]').forEach(btn => {
-    btn.addEventListener('click', () => { state.page = parseInt(btn.dataset.page); renderGames(); });
-  });
-  el.querySelector('#per-page-sel').addEventListener('change', e => {
+  el.querySelector('[data-action="prev"]')?.addEventListener('click', () => onPageChange(currentPage - 1));
+  el.querySelector('[data-action="next"]')?.addEventListener('click', () => onPageChange(currentPage + 1));
+  el.querySelectorAll('[data-page]').forEach(btn =>
+    btn.addEventListener('click', () => onPageChange(parseInt(btn.dataset.page)))
+  );
+  el.querySelector(`#${elId}-perpage`)?.addEventListener('change', e => {
     state.perPage = parseInt(e.target.value);
-    state.page = 1;
-    renderGames();
+    state.page = 1; state.fullPage = 1;
+    renderAll();
   });
 }
 
-function addGame(game) {
-  state.allGames.push(game);
-  document.getElementById('stat-deals').textContent = state.allGames.length;
+function renderDeals() {
+  const all = sorted(filtered(state.deals));
+  const totalPages = Math.max(1, Math.ceil(all.length / state.perPage));
+  if (state.page > totalPages) state.page = totalPages;
+  const page = all.slice((state.page-1)*state.perPage, state.page*state.perPage);
+
+  $('games-grid').innerHTML = page.map(g => gameCardHTML(g)).join('');
+  $('no-results').classList.toggle('hidden', all.length > 0 || state.deals.length === 0);
+  $('empty-state').classList.toggle('hidden', state.deals.length > 0 || state.fullGames.length > 0);
+  $('results-count').textContent = all.length > 0 ? `${all.length} risultati` : '';
+  renderPagination('pagination', state.page, totalPages, p => { state.page = p; renderDeals(); });
 }
 
-function setProgress(checked, total, msg) {
-  const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-pct').textContent = pct + '%';
-  document.getElementById('progress-text').textContent = `${checked} / ${total} giochi controllati`;
-  document.getElementById('stat-checked').textContent = checked;
-  if (msg) document.getElementById('status-msg').textContent = msg;
+function renderFull() {
+  const btn = $('toggle-full-btn');
+  const section = $('full-section');
+  btn.classList.toggle('hidden', state.fullGames.length === 0);
+
+  if (!state.showFull || state.fullGames.length === 0) {
+    section.classList.add('hidden');
+    return;
+  }
+  section.classList.remove('hidden');
+
+  const all = filteredFull();
+  const totalPages = Math.max(1, Math.ceil(all.length / state.perPage));
+  if (state.fullPage > totalPages) state.fullPage = totalPages;
+  const page = all.slice((state.fullPage-1)*state.perPage, state.fullPage*state.perPage);
+
+  $('full-grid').innerHTML = page.map(g => gameCardHTML(g, true)).join('');
+  $('full-no-results').classList.toggle('hidden', all.length > 0);
+  $('full-count').textContent = `${all.length} giochi a prezzo pieno`;
+  renderPagination('full-pagination', state.fullPage, totalPages, p => { state.fullPage = p; renderFull(); });
 }
 
-// ── STREAM ─────────────────────────────────────────────────────────────────
-function startStream() {
-  document.getElementById('progress-wrap').classList.remove('hidden');
-  document.getElementById('updated-bar').classList.add('hidden');
-  document.getElementById('games-grid').innerHTML = '';
-  state.allGames = [];
-  state.counts = {};
-  state.checkedIds = 0;
-  document.getElementById('stat-deals').textContent = '0';
+function renderMembers() {
+  $('members-row').innerHTML = state.members.map(m => `
+    <div class="member-chip ${state.activeMembers.has(m.id)?'active':''}" data-id="${m.id}">
+      <div class="chip-dot">${m.initials}</div>
+      <span>${m.name}${state.counts[m.name]!==undefined?' ('+state.counts[m.name]+')':''}</span>
+    </div>`).join('');
+  $('members-row').querySelectorAll('.member-chip').forEach(chip =>
+    chip.addEventListener('click', () => {
+      const id = chip.dataset.id;
+      state.activeMembers.has(id) ? state.activeMembers.delete(id) : state.activeMembers.add(id);
+      state.page = 1; state.fullPage = 1;
+      renderAll();
+    })
+  );
+}
 
-  const es = new EventSource('/api/deals-stream');
+function renderStats() {
+  $('stat-total').textContent = state.deals.length + state.fullGames.length || '—';
+  $('stat-deals').textContent = state.deals.length || '—';
+  $('stat-full').textContent  = state.fullGames.length || '—';
+}
 
-  es.addEventListener('meta', e => {
-    const d = JSON.parse(e.data);
-    state.totalIds = d.totalCommon;
-    document.getElementById('stat-total').textContent = d.totalCommon;
-    setProgress(0, d.totalCommon, '');
+function renderAll() {
+  renderMembers();
+  renderStats();
+  renderDeals();
+  renderFull();
+}
 
-    if (d.counts) {
-      state.counts = d.counts;
-      renderMembers(); // ora mostra i conteggi wishlist
+// ── SCAN STATUS ────────────────────────────────────────────────────────────
+function updateScanBar(scan) {
+  const bar = $('scan-bar');
+  if (!scan.running) { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  const pct = scan.total > 0 ? Math.round(scan.checked / scan.total * 100) : 0;
+  $('scan-message').textContent = scan.message || 'Scansione in corso...';
+  $('scan-fill').style.width = pct + '%';
+  $('scan-pct').textContent = pct + '%';
+  $('refresh-btn').disabled = true;
+}
+
+// ── POLLING ────────────────────────────────────────────────────────────────
+async function poll() {
+  try {
+    const r = await fetch('/api/scan/status');
+    const scan = await r.json();
+    updateScanBar(scan);
+
+    if (!scan.running) {
+      clearInterval(state.pollTimer);
+      state.pollTimer = null;
+      state.scanning = false;
+      $('refresh-btn').disabled = false;
+      if (scan.status === 'done') await loadData();
+      if (scan.status === 'error') {
+        $('scan-bar').classList.remove('hidden');
+        $('scan-message').textContent = '❌ ' + scan.message;
+        $('scan-spinner').style.display = 'none';
+        setTimeout(() => $('scan-bar').classList.add('hidden'), 5000);
+      }
     }
-  });
-
-  es.addEventListener('game', e => {
-    const game = JSON.parse(e.data);
-    state.checkedIds++;
-    addGame(game);
-    setProgress(state.checkedIds, state.totalIds, '');
-    // Aggiorna il grid ogni 5 offerte trovate per feedback visivo live
-    if (state.allGames.length % 5 === 0) renderGames();
-  });
-
-  es.addEventListener('progress', e => {
-    const d = JSON.parse(e.data);
-    setProgress(d.checked, d.total, '');
-  });
-
-  es.addEventListener('status', e => {
-    const d = JSON.parse(e.data);
-    document.getElementById('status-msg').textContent = d.msg;
-  });
-
-  es.addEventListener('done', e => {
-    const d = JSON.parse(e.data);
-    es.close();
-    setProgress(state.totalIds, state.totalIds, d.fromCache ? '✓ Dati dalla cache' : '✓ Scansione completata');
-    document.getElementById('progress-wrap').classList.add('hidden');
-    document.getElementById('updated-bar').classList.remove('hidden');
-    document.getElementById('updated-text').textContent =
-      `Aggiornato il ${new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · ${d.total} offerte trovate`;
-    // Re-render finale ordinato
-    renderGames();
-  });
-
-  es.addEventListener('error', e => {
-    es.close();
-    document.getElementById('status-msg').textContent = '❌ Errore connessione. Riprova.';
-  });
+  } catch(e) { /* ignora errori di rete temporanei */ }
 }
+
+function startPolling() {
+  if (state.pollTimer) return;
+  state.scanning = true;
+  $('refresh-btn').disabled = true;
+  state.pollTimer = setInterval(poll, 2500);
+  poll();
+}
+
+// ── DATA ───────────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const r = await fetch('/api/data');
+    const { cache, scan } = await r.json();
+
+    if (cache) {
+      state.deals = cache.discounted || [];
+      state.fullGames = cache.fullPrice || [];
+      state.counts = cache.counts || {};
+      if (cache.updatedAt) {
+        const d = new Date(cache.updatedAt);
+        $('updated-text').textContent = `Aggiornato il ${d.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})} alle ${d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`;
+      }
+    }
+
+    renderAll();
+    updateScanBar(scan);
+
+    if (scan.running) startPolling();
+    else if (!cache) {
+      // Prima volta, nessuna cache, avvia automaticamente
+      startScan();
+    }
+  } catch(e) {
+    console.error('Errore caricamento:', e);
+  }
+}
+
+async function startScan() {
+  try {
+    await fetch('/api/scan', { method: 'POST' });
+    startPolling();
+  } catch(e) {
+    console.error('Errore avvio scansione:', e);
+  }
+}
+
+// ── PULL TO REFRESH ────────────────────────────────────────────────────────
+(function setupPTR() {
+  let startY = 0;
+  let pulling = false;
+  const THRESHOLD = 80;
+  const indicator = $('ptr-indicator');
+
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY === 0 && !state.scanning) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 10) {
+      indicator.classList.add('visible');
+      $('ptr-text').textContent = dy > THRESHOLD ? 'Rilascia per aggiornare' : 'Trascina per aggiornare';
+      indicator.classList.toggle('releasing', dy > THRESHOLD);
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!pulling) return;
+    pulling = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    indicator.classList.remove('visible', 'releasing');
+    if (dy > THRESHOLD && !state.scanning) startScan();
+  });
+})();
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 async function init() {
-  const res = await fetch('/api/members');
-  state.members = await res.json();
-  renderMembers();
+  const members = await (await fetch('/api/members')).json();
+  state.members = members;
 
-  // Sort buttons
-  document.querySelectorAll('[data-sort]').forEach(btn => {
+  // Filtri
+  document.querySelectorAll('[data-sort]').forEach(btn =>
     btn.addEventListener('click', () => {
       document.querySelectorAll('[data-sort]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.sortBy = btn.dataset.sort;
-      state.page = 1; renderGames();
-    });
-  });
-
-  // Min-discount buttons
-  document.querySelectorAll('[data-min]').forEach(btn => {
+      state.page = 1; renderDeals();
+    })
+  );
+  document.querySelectorAll('[data-min]').forEach(btn =>
     btn.addEventListener('click', () => {
       document.querySelectorAll('[data-min]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.minDiscount = parseInt(btn.dataset.min);
-      state.page = 1; renderGames();
-    });
+      state.page = 1; renderDeals();
+    })
+  );
+  $('search-input').addEventListener('input', e => {
+    state.search = e.target.value;
+    state.page = 1; state.fullPage = 1;
+    renderDeals(); renderFull();
   });
 
-  // Search
-  document.getElementById('search-input').addEventListener('input', e => {
-    state.search = e.target.value;
-    state.page = 1; renderGames();
+  // Toggle full
+  $('toggle-full-btn').addEventListener('click', () => {
+    state.showFull = !state.showFull;
+    $('toggle-full-btn').classList.toggle('active', state.showFull);
+    $('toggle-full-btn').textContent = state.showFull ? '▼ Nascondi' : '▶ Mostra tutti';
+    renderFull();
   });
 
   // Refresh
-  document.getElementById('refresh-btn').addEventListener('click', startStream);
+  $('refresh-btn').addEventListener('click', startScan);
+  $('start-scan-btn')?.addEventListener('click', startScan);
 
-  startStream();
+  await loadData();
 }
 
 init();
