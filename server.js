@@ -99,6 +99,25 @@ async function runScan() {
       await sleep(1000);
     }
 
+    // Fetch avatar e displayname per ogni membro
+    scanState.message = 'Recupero profili Steam...';
+    try {
+      const ids = MEMBERS.map(m => m.id).join(',');
+      const profileUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_KEY}&steamids=${ids}`;
+      const profileRes = await axios.get(profileUrl, { timeout: 10000 });
+      const players = profileRes.data?.response?.players || [];
+      players.forEach(p => {
+        const member = MEMBERS.find(m => m.id === p.steamid);
+        if (member) {
+          member.avatar = p.avatarmedium || p.avatar || null;
+          member.displayName = p.personaname || member.name;
+        }
+      });
+      console.log('🖼️ Avatar caricati');
+    } catch(e) {
+      console.warn('⚠️ Errore avatar:', e.message);
+    }
+
     const allIds = Object.keys(gameCounter);
     scanState.total = allIds.length;
     scanState.message = `Controllo prezzi su ${allIds.length} giochi...`;
@@ -177,6 +196,13 @@ async function runScan() {
       discounted,
       fullPrice,
       updatedAt: Date.now(),
+      profiles: MEMBERS.map(m => ({
+        id: m.id,
+        name: m.name,
+        initials: m.initials,
+        avatar: m.avatar || null,
+        displayName: m.displayName || m.name,
+      })),
     };
 
     if (fullPrice.length > 5 || discounted.length > 0) {
@@ -220,5 +246,16 @@ app.get('/api/scan/status', (req, res) => {
 });
 
 app.get('/api/members', (req, res) => res.json(MEMBERS));
+
+// Profili aggiornati con avatar (inclusi nella cache)
+app.get('/api/profiles', (req, res) => {
+  res.json(MEMBERS.map(m => ({
+    id: m.id,
+    name: m.name,
+    initials: m.initials,
+    avatar: m.avatar || null,
+    displayName: m.displayName || m.name,
+  })));
+});
 
 app.listen(PORT, () => console.log(`✅ Server su porta ${PORT}`));
