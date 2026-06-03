@@ -16,14 +16,7 @@ if (!STEAM_KEY) {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-const MEMBERS = [
-  { id: '76561198142803553', name: 'MrNieft',      initials: 'NE' },
-  { id: '76561198044574276', name: 'Boris',         initials: 'BO' },
-  { id: '76561198155403000', name: 'ErCipolla',     initials: 'RI' },
-  { id: '76561198093585873', name: 'ManushBlades',  initials: 'MA' },
-  { id: '76561198093194853', name: 'WaCagher',      initials: 'WA' },
-  { id: '76561198089183727', name: 'Ture',          initials: 'TI' },
-];
+const MEMBERS = JSON.parse(process.env.MEMBERS);
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -134,7 +127,7 @@ async function runScan() {
       let success = false;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          const url = `https://store.steampowered.com/api/appdetails?appids=${id}`;
+          const url = `https://store.steampowered.com/api/appdetails?appids=${id}&cc=it&l=italian`;
           const r = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
           const steamData = r.data?.[id];
 
